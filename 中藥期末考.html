@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中医药重点选择题练习系统</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.8;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 15px;
+            margin-bottom: 10px;
+        }
+        #score-board {
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #e53935;
+            margin-bottom: 30px;
+            display: none;
+            background: #ffebee;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .question-block {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px dashed #eee;
+        }
+        .question {
+            font-weight: bold;
+            color: #1a73e8;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #1a73e8;
+            padding-left: 10px;
+            background: #f8fbff;
+            padding: 10px;
+            border-radius: 0 4px 4px 0;
+        }
+        .options {
+            padding-left: 15px;
+        }
+        .option-label {
+            display: block;
+            margin: 8px 0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        .option-label:hover {
+            background-color: #f0f4f8;
+            border-color: #d1e1f0;
+        }
+        input[type="radio"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+        .correct-answer {
+            background-color: #d4edda !important;
+            border-color: #c3e6cb !important;
+            color: #155724;
+            font-weight: bold;
+        }
+        .wrong-answer {
+            background-color: #f8d7da !important;
+            border-color: #f5c6cb !important;
+            color: #721c24;
+            text-decoration: line-through;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #aaa;
+            font-size: 0.9em;
+        }
+        .submit-btn {
+            display: block;
+            width: 200px;
+            margin: 30px auto 0;
+            padding: 12px;
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            box-shadow: 0 4px 6px rgba(26, 115, 232, 0.2);
+        }
+        .submit-btn:hover {
+            background-color: #1557b0;
+        }
+        .submit-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>重点选择题库练习</h1>
+        <div id="score-board"></div>
+        <form id="quiz-form">
+            <div id="qa-content"></div>
+            <button type="button" id="submit-btn" class="submit-btn" onclick="submitQuiz()">完成并提交</button>
+        </form>
+        <div class="footer">题目加载完毕，共包含所有 90 道题目。</div>
+    </div>
+
+    <script>
+        // 將原文件資料結構化為不會報錯的標準陣列
+        const quizData = [
+            { q: "1. 用辛味药治气滞证是取其:", o: { A:"发散之功", B:"清泄之功", C:"行气之功", D:"开窍之功", E:"燥湿之功" }, ans: "C" },
+            { q: "2. 我国现存最早的药学专著是（）", o: { A:"《新修本草》", B:"《本草纲目》", C:"《证类本草》", D:"《本草求真》", E:"《神农本草经》" }, ans: "E" },
+            { q: "3. 既能发汗解表，又能宣肺平喘的药物是（）", o: { A:"荆芥", B:"桂枝", C:"防风", D:"羌活", E:"麻黄" }, ans: "E" },
+            { q: "4. 功能燥湿化痰，为治湿痰的要药是（）", o: { A:"天南星", B:"半夏", C:"苍术", D:"白芥子", E:"旋复花" }, ans: "B" },
+            { q: "5. 泻火解毒之中，善于泻相火，退虚热的药物是：（ ）", o: { A:"黄连", B:"黄芩", C:"黄柏", D:"栀子", E:"地骨皮" }, ans: "C" },
+            { q: "6. 既能发汗解肌，又能温通经脉，助阳化气的药物是（）", o: { A:"麻黄", B:"紫苏", C:"桂枝", D:"羌活", E:"防风" }, ans: "C" },
+            { q: "7. 治肝郁气滞而致的月经不调、痛经，宜选用", o: { A:"木香", B:"桂枝", C:"丹皮", D:"香附", E:"青皮" }, ans: "D" },
+            { q: "8. 既能平肝潜阳，又能清肝明目的药物是（）", o: { A:"天麻", B:"僵蚕", C:"石决明", D:"刺蒺藜", E:"代赭石" }, ans: "C" },
+            { q: "9. 既清肝热，又息肝风、平肝阳的药物是（）", o: { A:"牛黄", B:"夏枯草", C:"羚羊角", D:"菊花", E:"石决明" }, ans: "C" },
+            { q: "10. “能行血中气滞，气中血滞，专治一身上下诸痛”的药物是（）", o: { A:"川芎", B:"延胡索", C:"柴胡", D:"丹参", E:"五灵脂" }, ans: "B" },
+            { q: "11. 下列哪种药物为驱绦虫的要药（）", o: { A:"使君子", B:"芜荑", C:"榧子", D:"鹤草芽", E:"鹤虱" }, ans: "D" },
+            { q: "12. 既能活血化瘀，又能行气的药物是（）", o: { A:"木香", B:"川芎", C:"田七", D:"丹参", E:"蒲黄" }, ans: "B" },
+            { q: "13. 既善祛蛔虫证，又能治小儿疳疾的药物是（）", o: { A:"使君子", B:"苦楝皮", C:"鹤草芽", D:"南瓜子", E:"雷丸" }, ans: "A" },
+            { q: "14. 独活的功效有（）", o: { A:"祛风湿，止痹痛，解表", B:"祛风湿，止痹痛，消骨哽", C:"祛风除湿，散寒止痛", D:"祛风除湿，活血通络", E:"祛风湿，止痹痛，利尿" }, ans: "A" },
+            { q: "15. 木瓜的功效是（）", o: { A:"舒筋活络，除湿和胃", B:"祛风除湿，活血通络", C:"祛风通络，定惊止痉", D:"祛风除湿，散寒止痛", E:"祛风通络，止泻痢" }, ans: "A" },
+            { q: "16. 固精缩尿止带药中，性温而不燥，补而不峻，为平补肝肾阴阳的要药是（）", o: { A:"山茱萸", B:"覆盆子", C:"桑螵蛸", D:"海螵蛸", E:"金樱子" }, ans: "B" },
+            { q: "17. 既能温中散寒，又能回阳通脉，温肺化饮的药物是（）", o: { A:"附子", B:"丁香", C:"花椒", D:"干姜", E:"高良姜" }, ans: "D" },
+            { q: "18. 既能消食和胃，又兼能解表的药物是（）", o: { A:"谷芽", B:"枳实", C:"神曲", D:"木瓜", E:"鸡内金" }, ans: "C" },
+            { q: "19. 温里药的共同功效是（）", o: { A:"温肝散寒", B:"温肺化饮", C:"温肾助阳", D:"温阳通脉", E:"温里散寒" }, ans: "E" },
+            { q: "20. 既能消食化积，又能行气散瘀的药物是（）", o: { A:"麦芽", B:"番泻叶", C:"谷芽", D:"郁李仁", E:"山楂" }, ans: "E" },
+            { q: "21. 既善润肠通便，又兼滋养补虚的药物是（ ）", o: { A:"芒硝", B:"柏子仁", C:"松子仁", D:"火麻仁", E:"牵牛子" }, ans: "D" },
+            { q: "22. 功能凉血止血，散瘀，利尿，尤宜于尿血的药物是（）", o: { A:"白茅根", B:"小蓟", C:"血余炭", D:"苎麻根", E:"茜草" }, ans: "B" },
+            { q: "23. 欲用大黄攻下通便，入汤剂宜（）", o: { A:"先煎", B:"同煎", C:"后下", D:"另煎", E:"包煎" }, ans: "C" },
+            { q: "24. 功能收敛止血，善治肺胃出血的药物是（）：", o: { A:"三七", B:"棕榈炭", C:"血余炭", D:"藕节", E:"白及" }, ans: "E" },
+            { q: "25. 下列除(  )外均为温热性药物一般具有的作用（）", o: { A:"补火助阳", B:"回阳救逆", C:"平肝潜阳", D:"温里散寒", E:"温经通络" }, ans: "C" },
+            { q: "26. 安神药均归（）", o: { A:"肝经", B:"肾经", C:"脾经", D:"心经", E:"肺经" }, ans: "D" },
+            { q: "27. 下列除（）外，均是人参的功效", o: { A:"大补元气", B:"补脾益肺", C:"升阳举陷", D:"生津止渴", E:"安神益智" }, ans: "C" },
+            { q: "28. 雄黄的功效是（）", o: { A:"补肾助阳", B:"解毒杀虫", C:"活血祛瘀", D:"温经通阳", E:"清热解毒" }, ans: "B" },
+            { q: "29. 生用能镇惊安神，煅用能收敛固涩的药物是（）", o: { A:"琥珀", B:"远志", C:"朱砂", D:"磁石", E:"龙骨" }, ans: "E" },
+            { q: "30. 补气生津力较缓，为补气药中的清补之品是（）", o: { A:"西洋参", B:"太子参", C:"党参", D:"山药", E:"南沙参" }, ans: "B" },
+            { q: "31. 蛇床子的功效是( )", o: { A:"攻毒杀虫,祛风燥湿", B:"解毒杀虫,收敛止泻", C:"解毒杀虫,温补脾阳", D:"杀虫止痒,温肾壮阳", E:"杀虫止痒,温中止呕" }, ans: "D" },
+            { q: "32. 最善治湿浊中阻之呕吐的药物是（）", o: { A:"苏叶", B:"香薷", C:"生姜", D:"黄连", E:"藿香" }, ans: "E" },
+            { q: "33. 既能开窍醒神，活血通经，止痛功效的药物是（）", o: { A:"冰片", B:"苏合香", C:"远志", D:"石菖蒲", E:"麝香" }, ans: "E" },
+            { q: "34. 化湿药的主治证是（）", o: { A:"水湿内停证", B:"水湿泄泻", C:"湿温", D:"湿滞中焦证", E:"湿痹" }, ans: "D" },
+            { q: "35. 石菖蒲的功效是：", o: { A:"开窍醒神，辟秽止痛", B:"开窍醒神，活血通经", C:"开窍宁神，消散痈肿", D:"开窍宁神，化湿和胃", E:"开窍醒神，行气活血" }, ans: "D" },
+            { q: "36. 下列除（）外，均是薏苡仁的功效", o: { A:"利水渗湿", B:"健脾", C:"除痹", D:"清热解毒", E:"清热排脓" }, ans: "D" },
+            { q: "37. 下列除（）外，均是车前子的功效", o: { A:"利湿退黄", B:"利尿通淋", C:"渗湿止泻", D:"清肝明目", E:"清肺化痰" }, ans: "A" },
+            { q: "38. 旋复花入汤剂煎煮时，应该：", o: { A:"另煎", B:"先煎", C:"包煎", D:"后下", E:"与诸药混合共煎" }, ans: "C" },
+            { q: "39. 既能清肺胃之热，又善滋肾降火的药物是（）", o: { A:"知母", B:"生地黄", C:"玄参", D:"青蒿", E:"地骨皮" }, ans: "A" },
+            { q: "40. 既能发汗解表，又能行气宽中的药物是（）", o: { A:"麻黄", B:"紫苏", C:"桂枝", D:"羌活", E:"防风" }, ans: "B" },
+            { q: "41. 治疗脾胃气滞，痰湿壅滞证，宜首选（）", o: { A:"香附", B:"陈皮", C:"青皮", D:"木香", E:"薤白" }, ans: "B" },
+            { q: "42. 功能燥湿化痰，为治湿痰的要药是（）", o: { A:"天南星", B:"半夏", C:"苍术", D:"白芥子", E:"旋复花" }, ans: "B" },
+            { q: "43. 善解肌退热，为清泻肺胃气分实热证要药的是（）", o: { A:"石膏", B:"知母", C:"芦根", D:"葛根", E:"黄芩" }, ans: "A" },
+            { q: "44. 善于疏散少阳半表半里之邪而和解退热，为治少阳证之要药是：", o: { A:"菊花", B:"桑叶", C:"薄荷", D:"蝉蜕", E:"柴胡" }, ans: "E" },
+            { q: "45. “气病之总司，女科之主帅”之称的药物是：", o: { A:"香附", B:"红花", C:"陈皮", D:"当归", E:"木香" }, ans: "A" },
+            { q: "46. 功似龙骨而长于软坚散结的药是（）", o: { A:"鳖甲", B:"磁石", C:"牡蛎", D:"玄参", E:"珍珠母" }, ans: "C" },
+            { q: "47. 既能活血祛瘀，又能止咳平喘的药物是：", o: { A:"王不留行", B:"泽兰", C:"桃仁", D:"红花", E:"丹参" }, ans: "C" },
+            { q: "48. 既能祛风湿，强筋骨，又能利尿的药物是（）", o: { A:"丝瓜络", B:"千年健", C:"狗脊", D:"五加皮", E:"桑寄生" }, ans: "D" },
+            { q: "49. 善滋阴潜阳，为治阴虚发热的要药是：", o: { A:"生地", B:"龟甲", C:"女贞子", D:"青蒿", E:"鳖甲" }, ans: "E" },
+            { q: "50. 既能散肝经之寒邪，又可解肝气之郁滞，为治肝寒气滞诸痛的要药是（）", o: { A:"附子", B:"肉桂", C:"高良姜", D:"花椒", E:"吴茱萸" }, ans: "E" },
+            { q: "51. 治疗热病高热，热极动风，手足抽搐的首选药物是（）", o: { A:"石膏", B:"黄连", C:"羚羊角", D:"大黄", E:"牡蛎" }, ans: "C" },
+            { q: "52. 既善“上行头目”，又可“下行血海”的药物是（）", o: { A:"桔梗", B:"柴胡", C:"川芎", D:"牛膝", E:"红花" }, ans: "C" },
+            { q: "53. 既能消食化积，又能行气消胀的药物是（）", o: { A:"橘皮", B:"谷芽", C:"木香", D:"莱菔子", E:"鸡内金" }, ans: "D" },
+            { q: "54. 酒大黄长于（）", o: { A:"止血", B:"通便", C:"清热", D:"活血", E:"解毒" }, ans: "D" },
+            { q: "55. 既能治蛔虫、蛲虫、钩虫等证，又能治疥癣湿疮的药物是（）", o: { A:"使君子", B:"苦楝皮", C:"槟榔", D:"南瓜子", E:"榧子" }, ans: "B" },
+            { q: "56. 治骨哽咽喉，最宜用（）", o: { A:"独活", B:"威灵仙", C:"白花蛇", D:"川乌", E:"木瓜" }, ans: "B" },
+            { q: "57. 下列除（）外，均是五味子的功效", o: { A:"敛肺滋肾", B:"生津敛汗", C:"涩精止泻", D:"宁心安神", E:"退虚热" }, ans: "E" },
+            { q: "58. 功能化瘀止血止痛，为伤科要药的药物是（）", o: { A:"蒲黄", B:"赤芍", C:"牡丹皮", D:"三七", E:"茜草" }, ans: "D" },
+            { q: "59. 辛味的作用是( )", o: { A:"补益、收敛、固涩", B:"泻下、软坚", C:"发散、行气血", D:"燥湿、利湿", E:"缓急止痛，调和药性" }, ans: "C" },
+            { q: "60. 被称为“回阳救逆第一品药”的药物是（）", o: { A:"干姜", B:"吴茱萸", C:"丁香", D:"附子", E:"小茴香" }, ans: "D" },
+            { q: "61. 善消化油腻肉食积滞之要药是（）", o: { A:"莱菔子", B:"木香", C:"麦芽", D:"山楂", E:"橘皮" }, ans: "D" },
+            { q: "62. 功擅荡涤肠胃积滞，为治胃肠积滞，实热便秘要药的是（）", o: { A:"芒硝", B:"大黄", C:"番泻叶", D:"芦荟", E:"牵牛子" }, ans: "B" },
+            { q: "63. 既能养心安神，又可收敛止汗的药物是（）", o: { A:"合欢皮", B:"远志", C:"夜交藤", D:"酸枣仁", E:"茯神" }, ans: "D" },
+            { q: "64. 既能益气、生津，又能养血的药物是（）", o: { A:"人参", B:"太子参", C:"党参", D:"玄参", E:"生地" }, ans: "C" },
+            { q: "65. 善清大肠之火热而凉血止血，为治下焦血热出血良的药物是（）", o: { A:"地榆", B:"侧柏叶", C:"生地黄", D:"马勃", E:"槐花" }, ans: "E" },
+            { q: "66. 下列除(  )外均为寒凉性药物一般具有的作用（）", o: { A:"清热", B:"回阳", C:"凉血", D:"解毒", E:"泻火" }, ans: "B" },
+            { q: "67. 朱砂的功效是（）", o: { A:"宁心安神，聪耳明目", B:"镇惊安神，纳气定喘", C:"镇心安神，活血散瘀", D:"养心安神，润肠通便", E:"镇心安神，清热解毒" }, ans: "E" },
+            { q: "68. 治疗痈疽溃后, 脓出不畅或腐肉不去, 新肉难生, 最宜选用（）", o: { A:"雄黄", B:"硫黄", C:"大蒜", D:"硼砂", E:"升药" }, ans: "E" },
+            { q: "69. 治暑月外感风寒，内伤生冷而致恶寒发热、 头痛脘闷、呕恶吐泻者，最宜选用（）", o: { A:"苍术", B:"苏叶", C:"青蒿", D:"藿香", E:"草果" }, ans: "D" },
+            { q: "70. 阴虚火旺的喘咳痰血证，最宜选用（）", o: { A:"人参", B:"党参", C:"太子参", D:"地骨皮", E:"西洋参" }, ans: "E" },
+            { q: "71. 硫黄在解毒杀虫之中,善治（）", o: { A:"疥疮", B:"丹毒", C:"顽癣", D:"梅毒", E:"麻风" }, ans: "A" },
+            { q: "72. 化湿药入煎剂应（）", o: { A:"先煎", B:"另煎", C:"研末服", D:"不宜久煎", E:"冲服" }, ans: "D" },
+            { q: "73. 既治寒闭证又治热闭证的药物是（）", o: { A:"苏合香", B:"牛黄", C:"细辛", D:"冰片", E:"麝香" }, ans: "E" },
+            { q: "74. 善治石淋的要药是：", o: { A:"石韦", B:"滑石", C:"海金沙", D:"蝼蛄", E:"金钱草" }, ans: "E" },
+            { q: "75. 既能温肺祛痰，又能利气散结、通络止痛的药物是（）", o: { A:"白芥子", B:"葶苈子", C:"紫苏子", D:"莱菔子", E:"白附子" }, ans: "A" },
+            { q: "76. 开窍药的共同功效是（）", o: { A:"活血通经", B:"清热止痛", C:"化湿和胃", D:"催产下胎", E:"开窍醒神" }, ans: "E" },
+            { q: "77. 既善利水渗湿，又能泄肾与膀胱之热的药物是（）", o: { A:"猪苓", B:"知母", C:"黄柏", D:"泽泻", E:"木通" }, ans: "D" },
+            { q: "78. 功能燥湿化痰，祛风止痉，为治风痰的要药是（）", o: { A:"天南星", B:"半夏", C:"白前", D:"白芥子", E:"旋复花" }, ans: "A" },
+            { q: "79. 石膏与知母的共同功效是（）", o: { A:"清肺胃热", B:"清心除烦", C:"清肺润燥", D:"清胃生津", E:"清肝明目" }, ans: "A" },
+            { q: "80. 既能发汗解表，又能温中止呕，温肺止咳的药物是（）", o: { A:"麻黄", B:"荆芥", C:"桂枝", D:"羌活", E:"生姜" }, ans: "E" },
+            { q: "81. 功能疏肝而破气的药是（）", o: { A:"吴茱萸", B:"青皮", C:"佛手", D:"香附", E:"柴胡" }, ans: "B" },
+            { q: "82. 长于清肝胆湿热，泻肝胆实火的药物是：（ ）", o: { A:"夏枯草", B:"黄芩", C:"菊花", D:"龙胆", E:"苦参" }, ans: "D" },
+            { q: "83. 治疗外感风寒表虚有汗者，常与白芍同用的药物是（）", o: { A:"麻黄", B:"桂枝", C:"白芷", D:"防风", E:"荆芥" }, ans: "B" },
+            { q: "84. 陈皮的功效是( )", o: { A:"温肺化痰止咳", B:"润肺化痰止咳", C:"宣肺化痰止咳", D:"燥湿化痰止咳", E:"降逆化痰止咳" }, ans: "D" },
+            { q: "85. 既能平肝潜阳，又降气逆的药物，首推（）", o: { A:"石决明", B:"磁石", C:"赭石", D:"牡蛎", E:"珍珠母" }, ans: "C" },
+            { q: "86. 既能治风湿痹痛,又能治胎漏下血, 胎动不安的药物是（）", o: { A:"五加皮", B:"桑枝", C:"桑寄生", D:"狗脊", E:"千年健" }, ans: "C" },
+            { q: "87. 红花的功效是：", o: { A:"行血补血，舒筋活络", B:"活血定痛，清热利湿", C:"活血通经，祛瘀止痛", D:"活血止痛，消肿散结", E:"活血祛瘀，润肠通便" }, ans: "C" },
+            { q: "88. 治疗热病高热，热极动风，手足抽搐的首选药物是：", o: { A:"石膏", B:"黄连", C:"羚羊角", D:"大黄", E:"牡蛎" }, ans: "C" },
+            { q: "89. 川芎的功效是（）", o: { A:"活血行气，祛风止痛", B:"活血调经，祛风通络", C:"活血行气，止血", D:"活血通经，祛瘀止痛", E:"活血行气，消积止痛" }, ans: "A" },
+            { q: "90. 槟榔的功效是（）", o: { A:"驱虫消积，行气利水", B:"杀虫疗癣，行气利水", C:"驱虫消积，润肠通便", D:"杀虫疗癣，润肠通便", E:"驱虫消积，通便，润肺" }, ans: "A" }
+        ];
+
+        const container = document.getElementById('qa-content');
+
+        // 自動渲染題目，完全不依賴正則表達式，保證能渲染出來
+        quizData.forEach((item, index) => {
+            const qNum = index + 1;
+            
+            // 題幹區塊
+            const qBlock = document.createElement('div');
+            qBlock.className = 'question-block';
+            
+            const qTitle = document.createElement('div');
+            qTitle.className = 'question';
+            qTitle.innerText = item.q;
+            qBlock.appendChild(qTitle);
+
+            // 選項區塊
+            const optsDiv = document.createElement('div');
+            optsDiv.className = 'options';
+
+            for (const [key, value] of Object.entries(item.o)) {
+                const label = document.createElement('label');
+                label.className = 'option-label';
+                label.id = 'label_q' + qNum + '_' + key;
+
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'q' + qNum;
+                radio.value = key;
+
+                label.appendChild(radio);
+                label.appendChild(document.createTextNode(' ' + key + '. ' + value));
+                optsDiv.appendChild(label);
+            }
+
+            qBlock.appendChild(optsDiv);
+            container.appendChild(qBlock);
+        });
+
+        // 批改功能
+        function submitQuiz() {
+            let form = document.getElementById('quiz-form');
+            let score = 0;
+            let answered = 0;
+            const totalQuestions = quizData.length;
+
+            document.getElementById('submit-btn').disabled = true;
+            document.getElementById('submit-btn').innerText = "已批改完成";
+
+            quizData.forEach((item, index) => {
+                const qNum = index + 1;
+                const options = document.getElementsByName('q' + qNum);
+                let selectedValue = null;
+                const correctValue = item.ans;
+
+                options.forEach(opt => {
+                    opt.disabled = true;
+                    if(opt.checked) {
+                        selectedValue = opt.value;
+                        answered++;
+                    }
+                });
+
+                if (correctValue) {
+                    let correctLabel = document.getElementById('label_q' + qNum + '_' + correctValue);
+                    if (correctLabel) correctLabel.classList.add('correct-answer');
+                }
+
+                if(selectedValue) {
+                    if (selectedValue === correctValue) {
+                        score++;
+                    } else {
+                        let wrongLabel = document.getElementById('label_q' + qNum + '_' + selectedValue);
+                        if (wrongLabel) wrongLabel.classList.add('wrong-answer');
+                    }
+                }
+            });
+
+            let scoreBoard = document.getElementById('score-board');
+            let percentage = Math.round((score / totalQuestions) * 100);
+            scoreBoard.innerHTML = `
+                测验结束！<br>
+                作答题数：${answered} / ${totalQuestions}<br>
+                得分：${score} / ${totalQuestions} <br>
+                准确率：${percentage}%
+            `;
+            scoreBoard.style.display = 'block';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
